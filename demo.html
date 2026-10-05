@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tebak Gambar Inggris | Fun Kids Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Figtree:wght@400..800&display=swap" rel="stylesheet">
+<style>
+  /* ============ TEMA: ganti nilai di sini untuk klien baru ============ */
+  :root {
+    --ink: #181B45;
+    --ink-soft: #4A4E7A;
+    --paper: #F7F8FD;
+    --card: #FFFFFF;
+    --sun: #FFC93C;
+    --sun-soft: #FFF3CC;
+    --accent: #D93E32;     /* tombol utama */
+    --good: #1FA97A;
+    --good-soft: #D9F4E8;
+    --bad-soft: #FFE3E0;
+    --line: rgba(24, 27, 69, .14);
+    --f-display: 'Bricolage Grotesque', 'Trebuchet MS', system-ui, sans-serif;
+    --f-body: 'Figtree', 'Segoe UI', system-ui, sans-serif;
+  }
+  /* ==================================================================== */
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100%; }
+  body {
+    font-family: var(--f-body); font-size: 1.05rem; line-height: 1.5;
+    background: var(--paper); color: var(--ink);
+    display: flex; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button, a { font: inherit; color: inherit; }
+  button { cursor: pointer; border: 0; background: none; }
+  :focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+  .app { width: 100%; max-width: 480px; min-height: 100vh; min-height: 100dvh; padding: 16px 18px 28px; display: flex; flex-direction: column; gap: 14px; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; }
+  .logo { display: inline-flex; align-items: center; gap: 10px; font-family: var(--f-display); font-weight: 800; font-size: 1.1rem; letter-spacing: -.01em; }
+  .logo::before { content: ""; width: 22px; height: 22px; border-radius: 7px; background: var(--sun); transform: rotate(-8deg); box-shadow: 3px 3px 0 var(--ink); }
+  .mute { width: 44px; height: 44px; border-radius: 50%; background: var(--card); border: 1.5px solid var(--line); font-size: 1.15rem; line-height: 1; }
+
+  .screen { display: none; flex: 1; flex-direction: column; gap: 16px; }
+  .screen.on { display: flex; }
+
+  h1, h2, .btn, .score, .choice, .prompt { font-family: var(--f-display); letter-spacing: -.01em; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; text-decoration: none; text-align: center;
+    min-height: 58px; padding: 0 30px; border-radius: 999px; border: 2px solid transparent;
+    background: var(--accent); color: #fff; font-weight: 700; font-size: 1.2rem;
+    box-shadow: 0 10px 22px -10px rgba(217, 62, 50, .75);
+    transition: transform .12s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn.line { background: transparent; color: var(--ink); border-color: var(--ink); box-shadow: none; }
+
+  /* ---------- Mulai ---------- */
+  #start { justify-content: center; gap: 22px; }
+  .hero { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 26px 22px; }
+  .hero::before { content: ""; position: absolute; inset: 0; background: var(--sun); border-radius: 36px; transform: rotate(-2deg); }
+  .hero span {
+    position: relative; aspect-ratio: 1; display: grid; place-items: center; font-size: 2.5rem;
+    background: var(--card); border-radius: 20px; box-shadow: 0 8px 16px -8px rgba(24, 27, 69, .45);
+  }
+  .hero span:nth-child(odd) { transform: rotate(-5deg); }
+  .hero span:nth-child(even) { transform: rotate(4deg) translateY(6px); }
+  h1 { font-size: clamp(2.4rem, 11vw, 3.2rem); line-height: 1.02; font-weight: 800; max-width: 12ch; }
+  .sub { color: var(--ink-soft); font-size: 1.15rem; max-width: 30ch; }
+  .credit { color: var(--ink-soft); font-size: .92rem; }
+
+  /* ---------- Album progres ---------- */
+  .album { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; }
+  .slot {
+    aspect-ratio: 1; border-radius: 9px; display: grid; place-items: center; font-size: .9rem; line-height: 1;
+    border: 2px dashed var(--line); background: transparent;
+  }
+  .slot.now { border: 2px solid var(--ink); background: var(--card); }
+  .slot.got { border: 2px solid var(--sun); background: var(--sun-soft); animation: pop .4s ease-out; }
+  .slot.miss { border: 2px solid var(--line); background: var(--card); filter: grayscale(1); opacity: .55; }
+
+  /* ---------- Kuis ---------- */
+  .prompt { text-align: center; font-weight: 700; font-size: 1.2rem; color: var(--ink-soft); }
+  .stage { position: relative; display: grid; place-items: center; padding: 20px 0; margin: 2px 0 6px; }
+  .stage::before { content: ""; position: absolute; inset: 0 8%; background: var(--sun); border-radius: 36px; transform: rotate(-3deg); }
+  .picture {
+    position: relative; width: min(52vw, 210px); aspect-ratio: 1; display: grid; place-items: center;
+    background: var(--card); border-radius: 30px; font-size: clamp(4.6rem, 25vw, 7.4rem); line-height: 1;
+    box-shadow: 0 16px 28px -14px rgba(24, 27, 69, .5); transform: rotate(2deg);
+  }
+  .picture.enter { animation: drop .45s cubic-bezier(.3, 1.4, .5, 1); }
+  .choices { display: grid; gap: 12px; }
+  .choice {
+    min-height: 62px; padding: 8px 18px; border-radius: 20px; text-align: left;
+    background: var(--card); border: 2px solid var(--line);
+    font-size: 1.55rem; font-weight: 700; display: flex; align-items: center; gap: 14px;
+    transition: border-color .12s, background .12s, transform .08s;
+  }
+  .choice .key {
+    flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--sun-soft);
+    display: grid; place-items: center; font-size: .95rem; font-weight: 800;
+  }
+  .choice:hover:not(:disabled) { border-color: var(--ink); }
+  .choice:active:not(:disabled) { transform: scale(.985); }
+  .choice.right { background: var(--good-soft); border-color: var(--good); animation: pop .4s ease-out; }
+  .choice.right .key { background: var(--good); color: #fff; }
+  .choice.wrong { background: var(--bad-soft); border-color: var(--accent); animation: shake .35s; }
+  .choice.dim { opacity: .5; }
+  .choice:disabled { cursor: default; }
+  .feedback { min-height: 2em; text-align: center; font-size: 1.15rem; font-weight: 700; }
+
+  /* ---------- Akhir ---------- */
+  #end { justify-content: center; align-items: center; text-align: center; gap: 16px; }
+  h2 { font-size: 2.4rem; font-weight: 800; line-height: 1.05; }
+  .score { font-size: 4.2rem; font-weight: 800; line-height: 1; }
+  .score small { font-size: 1.6rem; color: var(--ink-soft); }
+  .end-msg { color: var(--ink-soft); max-width: 28ch; }
+  .album-big { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: 100%; max-width: 340px; }
+  .album-big .slot { font-size: 1.9rem; border-radius: 16px; }
+  .actions { display: grid; gap: 12px; width: 100%; max-width: 340px; margin-top: 6px; }
+  .cta-note { color: var(--ink-soft); font-size: .92rem; }
+
+  @keyframes pop { 0% { transform: scale(.7); } 70% { transform: scale(1.08); } 100% { transform: scale(1); } }
+  @keyframes drop { 0% { transform: translateY(-36px) rotate(-6deg); opacity: 0; } 100% { transform: translateY(0) rotate(2deg); opacity: 1; } }
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-7px); } 75% { transform: translateX(7px); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<main class="app">
+  <header class="topbar">
+    <div class="logo" id="brand"></div>
+    <button class="mute" id="mute" aria-label="Matikan suara" aria-pressed="false">🔊</button>
+  </header>
+
+  <!-- MULAI -->
+  <section class="screen on" id="start">
+    <div class="hero" aria-hidden="true"><span>🐱</span><span>🍎</span><span>⚽</span><span>🚗</span><span>🐟</span><span>☀️</span></div>
+    <h1 id="title"></h1>
+    <p class="sub" id="tagline"></p>
+    <button class="btn" id="startBtn">Mulai main</button>
+    <p class="credit" id="credit"></p>
+  </section>
+
+  <!-- KUIS -->
+  <section class="screen" id="quiz" aria-live="polite">
+    <div class="album" id="album" aria-label="Kemajuan"></div>
+    <p class="prompt">Apa bahasa Inggrisnya?</p>
+    <div class="stage"><div class="picture" id="picture" role="img"></div></div>
+    <div class="choices" id="choices"></div>
+    <p class="feedback" id="feedback"></p>
+  </section>
+
+  <!-- AKHIR -->
+  <section class="screen" id="end">
+    <h2 id="endTitle"></h2>
+    <div class="score"><span id="scoreNum"></span><small id="scoreTotal"></small></div>
+    <p class="end-msg" id="endMsg"></p>
+    <div class="album-big" id="albumBig" aria-label="Album stiker"></div>
+    <div class="actions">
+      <a class="btn" id="orderBtn" target="_blank" rel="noopener">Pesan game seperti ini</a>
+      <button class="btn line" id="againBtn">Main lagi</button>
+    </div>
+    <p class="cta-note" id="ctaNote"></p>
+  </section>
+</main>
+
+<script>
+/* ============ KONFIGURASI: ganti isi ini untuk klien baru ============ */
+const CONFIG = {
+  brand: "Fun Kids Studio",
+  title: "Tebak Gambar Inggris",
+  tagline: "Lihat gambarnya, pilih kata Inggrisnya, kumpulkan semua stiker!",
+  credit: "Game contoh dari Fun Kids Studio",
+  waNumber: "6288289533781",
+  orderUrl: "",   // isi dengan link halaman jasa kalau sudah ada; kosong = langsung ke WhatsApp
+  orderText: "Halo Fun Kids Studio, aku sudah coba game demonya dan mau pesan game seperti ini.",
+  ctaNote: "Materi, warna, dan nama brand bisa disesuaikan dengan kebutuhanmu.",
+  questions: [
+    { emoji: "🐱", answer: "cat" },
+    { emoji: "🐶", answer: "dog" },
+    { emoji: "🐟", answer: "fish" },
+    { emoji: "🐦", answer: "bird" },
+    { emoji: "🍎", answer: "apple" },
+    { emoji: "🍌", answer: "banana" },
+    { emoji: "🥛", answer: "milk" },
+    { emoji: "⚽", answer: "ball" },
+    { emoji: "🚗", answer: "car" },
+    { emoji: "☀️", answer: "sun" }
+  ],
+  praise: ["Hebat!", "Pintar!", "Keren!", "Betul!", "Mantap!"],
+  retry: ["Ayo coba lagi!", "Hampir! Coba lagi ya.", "Pilih yang lain ya!"],
+  endMessages: [
+    [10, "Sempurna! Semua jawabanmu benar pada percobaan pertama."],
+    [7,  "Keren sekali! Sedikit lagi jadi juara."],
+    [4,  "Bagus! Main lagi supaya makin hafal."],
+    [0,  "Yuk coba lagi, pasti bisa!"]
+  ]
+};
+/* ====================================================================== */
+
+const $ = id => document.getElementById(id);
+const screens = { start: $('start'), quiz: $('quiz'), end: $('end') };
+let idx = 0, results = [], locked = false, wrongThisQ = false, muted = false, order = [], nextTimer;
+
+function show(name) {
+  Object.values(screens).forEach(s => s.classList.remove('on'));
+  screens[name].classList.add('on');
+  window.scrollTo(0, 0);
+}
+function shuffle(a) {
+  a = a.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+/* ---- suara sederhana (tanpa file audio) ---- */
+let audioCtx;
+function beep(freqs, dur = 0.12) {
+  if (muted) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    let t = audioCtx.currentTime;
+    freqs.forEach(f => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'triangle'; o.frequency.value = f;
+      g.gain.setValueAtTime(.18, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t); o.stop(t + dur); t += dur * .9;
+    });
+  } catch (e) {}
+}
+function speak(word) {
+  if (muted || !('speechSynthesis' in window)) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(word);
+    u.lang = 'en-US'; u.rate = .8; u.pitch = 1.1;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+
+/* ---- album progres ---- */
+function renderAlbum() {
+  $('album').innerHTML = order.map((q, i) => {
+    let cls = 'slot', content = '';
+    if (i < results.length) { cls += results[i] ? ' got' : ' miss'; content = q.emoji; }
+    else if (i === idx) cls += ' now';
+    return `<div class="${cls}">${content}</div>`;
+  }).join('');
+}
+
+/* ---- satu soal ---- */
+function renderQuestion() {
+  const q = order[idx];
+  locked = false; wrongThisQ = false;
+  renderAlbum();
+  const pic = $('picture');
+  pic.textContent = q.emoji;
+  pic.setAttribute('aria-label', 'Gambar soal ' + (idx + 1));
+  pic.classList.remove('enter'); void pic.offsetWidth; pic.classList.add('enter');
+  $('feedback').textContent = '';
+
+  const others = shuffle(CONFIG.questions.filter(x => x.answer !== q.answer)).slice(0, 2);
+  const opts = shuffle([q, ...others]);
+  $('choices').innerHTML = opts.map((o, i) =>
+    `<button class="choice" data-word="${o.answer}"><span class="key">${'ABC'[i]}</span>${o.answer}</button>`
+  ).join('');
+  document.querySelectorAll('.choice').forEach(b => b.addEventListener('click', () => answer(b)));
+}
+
+function answer(btn) {
+  if (locked) return;
+  const q = order[idx];
+  if (btn.dataset.word === q.answer) {
+    locked = true;
+    results.push(!wrongThisQ);
+    btn.classList.add('right');
+    document.querySelectorAll('.choice').forEach(b => { b.disabled = true; if (b !== btn) b.classList.add('dim'); });
+    $('feedback').textContent = pick(CONFIG.praise) + ' ' + q.answer + ' = ' + q.emoji;
+    beep([660, 880, 1100]);
+    speak(q.answer);
+    nextTimer = setTimeout(next, 1500);
+  } else {
+    wrongThisQ = true;
+    btn.classList.remove('wrong'); void btn.offsetWidth; btn.classList.add('wrong');
+    btn.disabled = true; btn.classList.add('dim');
+    $('feedback').textContent = pick(CONFIG.retry);
+    beep([260, 200], .15);
+  }
+}
+
+function next() {
+  idx++;
+  if (idx >= order.length) return finish();
+  renderQuestion();
+}
+
+function finish() {
+  const total = order.length;
+  const score = results.filter(Boolean).length;
+  $('endTitle').textContent = score === total ? 'Juara!' : 'Selesai!';
+  $('scoreNum').textContent = score;
+  $('scoreTotal').textContent = ' / ' + total;
+  $('endMsg').textContent = CONFIG.endMessages.find(([min]) => score >= min)[1];
+  $('albumBig').innerHTML = order.map((q, i) => `<div class="slot ${results[i] ? 'got' : 'miss'}">${q.emoji}</div>`).join('');
+  show('end');
+  beep([523, 659, 784, 1046], .14);
+}
+
+function start() {
+  clearTimeout(nextTimer);
+  order = shuffle(CONFIG.questions);
+  idx = 0; results = [];
+  show('quiz');
+  renderQuestion();
+}
+
+/* ---- inisialisasi ---- */
+document.title = CONFIG.title + ' | ' + CONFIG.brand;
+$('brand').textContent = CONFIG.brand;
+$('title').textContent = CONFIG.title;
+$('tagline').textContent = CONFIG.tagline;
+$('credit').textContent = CONFIG.credit;
+$('ctaNote').textContent = CONFIG.ctaNote;
+$('orderBtn').href = CONFIG.orderUrl || ('https://wa.me/' + CONFIG.waNumber + '?text=' + encodeURIComponent(CONFIG.orderText));
+$('startBtn').addEventListener('click', () => { beep([523, 784]); start(); });
+$('againBtn').addEventListener('click', start);
+$('mute').addEventListener('click', e => {
+  muted = !muted;
+  e.currentTarget.textContent = muted ? '🔇' : '🔊';
+  e.currentTarget.setAttribute('aria-pressed', muted);
+  e.currentTarget.setAttribute('aria-label', muted ? 'Nyalakan suara' : 'Matikan suara');
+  if (muted && 'speechSynthesis' in window) speechSynthesis.cancel();
+});
+</script>
+</body>
+</html>
